@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"log"
 	"os"
@@ -10,18 +11,21 @@ import (
 
 	uploadpb "github.com/dimk00z/grpc-filetransfer/pkg/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type ClientService struct {
 	addr      string
+	tls       bool
 	filePath  string
 	batchSize int
 	client    uploadpb.FileServiceClient
 }
 
-func New(addr string, filePath string, batchSize int) *ClientService {
+func New(addr string, tls bool, filePath string, batchSize int) *ClientService {
 	return &ClientService{
 		addr:      addr,
+		tls:       tls,
 		filePath:  filePath,
 		batchSize: batchSize,
 	}
@@ -29,7 +33,25 @@ func New(addr string, filePath string, batchSize int) *ClientService {
 
 func (s *ClientService) SendFile() error {
 	log.Println(s.addr, s.filePath)
-	conn, err := grpc.Dial(s.addr, grpc.WithInsecure())
+
+	dialOptions := []grpc.DialOption{}
+	if s.tls {
+		log.Println("TLS enabled")
+		// dail server
+		config := &tls.Config{
+			Certificates:       []tls.Certificate{},
+			InsecureSkipVerify: true,
+		}
+
+		tlsCredential := credentials.NewTLS(config)
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(tlsCredential))
+	} else {
+		log.Println("TLS disabled")
+		dialOptions = append(dialOptions, grpc.WithInsecure())
+	}
+
+	//conn, err := grpc.Dial(s.addr, grpc.WithInsecure())
+	conn, err := grpc.Dial(s.addr, dialOptions...)
 	if err != nil {
 		return err
 	}

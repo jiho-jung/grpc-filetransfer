@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	uploadpb "github.com/dimk00z/grpc-filetransfer/pkg/proto"
 	"google.golang.org/grpc"
@@ -95,6 +96,9 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 	}
 	buf := make([]byte, s.batchSize)
 	batchNumber := 1
+
+	start := time.Now()
+
 	for {
 		num, err := file.Read(buf)
 		if err == io.EOF {
@@ -116,7 +120,11 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 	if err != nil {
 		return err
 	}
-	log.Printf("Sent - %v bytes - %s\n", res.GetSize(), res.GetFileName())
+
+	elapsed := time.Since(start)
+
+	log.Printf("Sent - %v bytes - %s - elapsed %v - %v sent per sec \n",
+		res.GetSize(), res.GetFileName(), elapsed, batchNumber/int(elapsed.Seconds()))
 	cancel()
 	return nil
 }

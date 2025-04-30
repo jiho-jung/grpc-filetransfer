@@ -96,6 +96,8 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 	}
 	buf := make([]byte, s.batchSize)
 	batchNumber := 1
+	cps := map[int]int{}
+	var idx int
 
 	start := time.Now()
 
@@ -112,10 +114,16 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 		if err := stream.Send(&uploadpb.FileUploadRequest{FileName: s.filePath, Chunk: chunk}); err != nil {
 			return err
 		}
-		log.Printf("Sent - batch #%v - size - %v\n", batchNumber, len(chunk))
+
+		idx = int(time.Since(start).Seconds())
+		log.Printf("Sent - batch #%v(%d) - size - %v\n", batchNumber, idx, len(chunk))
 		batchNumber += 1
 
+		cps[idx]++
 	}
+
+	cps[idx]++
+
 	res, err := stream.CloseAndRecv()
 	if err != nil {
 		return err
@@ -123,7 +131,8 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 
 	elapsed := time.Since(start)
 
-	log.Printf("Sent - %v bytes - %d chunks(%d) - %.3fs elapsed - %v chunkspersec - %s \n",
+	log.Printf("Sent - %s - %v bytes - %d chunks(%d) - %.3fs elapsed - %v chunkspersec - %s \n",
+		s.addr,
 		res.GetSize(),
 		batchNumber,
 		s.batchSize,
@@ -131,6 +140,8 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 		batchNumber/int(elapsed.Seconds()),
 		res.GetFileName())
 
+	log.Printf("CPS: %+v \n", cps)
 	cancel()
+
 	return nil
 }

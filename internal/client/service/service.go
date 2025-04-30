@@ -123,8 +123,14 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 
 	elapsed := time.Since(start)
 
-	log.Printf("Sent - %v bytes - %s - elapsed %v - %v sent per sec \n",
-		res.GetSize(), res.GetFileName(), elapsed, batchNumber/int(elapsed.Seconds()))
+	log.Printf("Sent - %v bytes - %d chunks(%d) - %.3fs elapsed - %v chunkpersec - %s \n",
+		res.GetSize(),
+		batchNumber,
+		s.batchSize,
+		elapsed.Seconds(),
+		batchNumber/int(elapsed.Seconds()),
+		res.GetFileName())
+
 	cancel()
 	return nil
 }

@@ -14,11 +14,13 @@ var (
 	filePath   string
 	batchSize  int
 	tls        bool
-	rootCmd    = &cobra.Command{
+	verbose    int
+
+	rootCmd = &cobra.Command{
 		Use:   "transfer_client",
 		Short: "Sending files via gRPC",
 		Run: func(cmd *cobra.Command, args []string) {
-			clientService := service.New(serverAddr, tls, filePath, batchSize)
+			clientService := service.New(serverAddr, tls, filePath, batchSize, verbose)
 			if err := clientService.SendFile(); err != nil {
 				log.Fatal(err)
 			}
@@ -38,6 +40,8 @@ func init() {
 	rootCmd.Flags().BoolVarP(&tls, "tls", "t", false, "use tls")
 	rootCmd.Flags().StringVarP(&filePath, "file", "f", "", "file path")
 	rootCmd.Flags().IntVarP(&batchSize, "batch", "b", 1024*1024, "batch size for sending")
+	rootCmd.Flags().IntVarP(&verbose, "verbose", "v", 0, "verbose mode: 0:disable, >1:show n'th msg")
+
 	if err := rootCmd.MarkFlagRequired("file"); err != nil {
 		log.Fatal(err)
 	}

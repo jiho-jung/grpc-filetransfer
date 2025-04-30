@@ -21,14 +21,16 @@ type ClientService struct {
 	filePath  string
 	batchSize int
 	client    uploadpb.FileServiceClient
+	verbose   int
 }
 
-func New(addr string, tls bool, filePath string, batchSize int) *ClientService {
+func New(addr string, tls bool, filePath string, batchSize int, verbose int) *ClientService {
 	return &ClientService{
 		addr:      addr,
 		tls:       tls,
 		filePath:  filePath,
 		batchSize: batchSize,
+		verbose:   verbose,
 	}
 }
 
@@ -116,7 +118,11 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 		}
 
 		idx = int(time.Since(start).Seconds())
-		log.Printf("Sent - batch #%v(%d) - size - %v\n", batchNumber, idx, len(chunk))
+
+		if s.verbose > 0 && batchNumber > 0 && batchNumber%s.verbose == 0 {
+			log.Printf("Sent - batch #%v(%d) - size - %v\n", batchNumber, idx, len(chunk))
+		}
+
 		batchNumber += 1
 
 		cps[idx]++

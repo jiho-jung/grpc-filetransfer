@@ -32,3 +32,7 @@ File transfer speed depends on `batch` size
 ### Client run
 
 ```go run cmd/client/main.go -a=':9000' -f=8GB.bin```
+
+### run multiple round test
+```nohup ./run_test.sh > 1GB_msg.txt 2>&1```
+

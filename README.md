@@ -24,6 +24,7 @@ Flags:
   -b, --batch int     batch size for sending (default 1048576)
   -f, --file string   file path
   -h, --help          help for transfer_client
+  -t, --tls           use tls
 ```
 
 File transfer speed depends on `batch` size 

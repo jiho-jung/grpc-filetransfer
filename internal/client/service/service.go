@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -22,15 +23,17 @@ type ClientService struct {
 	batchSize int
 	client    uploadpb.FileServiceClient
 	verbose   int
+	testName  string
 }
 
-func New(addr string, tls bool, filePath string, batchSize int, verbose int) *ClientService {
+func New(addr string, tls bool, filePath string, batchSize int, verbose int, testName string) *ClientService {
 	return &ClientService{
 		addr:      addr,
 		tls:       tls,
 		filePath:  filePath,
 		batchSize: batchSize,
 		verbose:   verbose,
+		testName:  testName,
 	}
 }
 
@@ -101,6 +104,11 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 	cps := map[int]int{}
 	var idx int
 
+	var testName string
+	if s.testName != "" {
+		testName = fmt.Sprintf("%s ", s.testName)
+	}
+
 	start := time.Now()
 
 	for {
@@ -120,7 +128,7 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 		idx = int(time.Since(start).Seconds())
 
 		if s.verbose > 0 && batchNumber > 0 && batchNumber%s.verbose == 0 {
-			log.Printf("Sent - batch #%v(%d) - size - %v\n", batchNumber, idx, len(chunk))
+			log.Printf("Sent %s- batch #%v(%d) - size %v\n", testName, batchNumber, idx, len(chunk))
 		}
 
 		batchNumber += 1
@@ -137,7 +145,8 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 
 	elapsed := time.Since(start)
 
-	log.Printf("Sent - %s - %v bytes - %d chunks(%d) - %.3fs elapsed - %v chunkspersec - %s \n",
+	log.Printf("Sent %s- %s - %v bytes - %d chunks(%d) - %.3fs elapsed - %v chunkspersec - %s \n",
+		testName,
 		s.addr,
 		res.GetSize(),
 		batchNumber,
@@ -146,7 +155,7 @@ func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) e
 		batchNumber/int(elapsed.Seconds()),
 		res.GetFileName())
 
-	log.Printf("CPS: %+v \n", cps)
+	log.Printf("%sCPS: %+v \n", testName, cps)
 	cancel()
 
 	return nil
